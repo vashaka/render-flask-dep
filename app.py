@@ -3,11 +3,16 @@ from flask_cors import CORS
 from PIL import Image
 import ollama
 import os
+import uuid
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 UPLOAD_FOLDER = './uploads'
+
+@app.route('/')
+def home():
+    return "Welcome to the Flask API!"
 
 @app.route('/analyze-image', methods=['POST'])
 def analyze_image():
@@ -21,9 +26,14 @@ def analyze_image():
     
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    
-    # Save the uploaded image
-    image_path = os.path.join(UPLOAD_FOLDER, 'uploaded_image.jpg')
+
+    # Validate that the file is an image
+    if not file.mimetype.startswith('image/'):
+        return jsonify({'error': 'Invalid file type. Please upload an image.'}), 400
+
+    # Save the uploaded image with a unique name
+    image_filename = f"{uuid.uuid4()}.jpg"
+    image_path = os.path.join(UPLOAD_FOLDER, image_filename)
     file.save(image_path)
 
     # Get the response from the model
@@ -60,4 +70,4 @@ def extract_ingredients(response_content):
     return ingredients
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(port=5000, debug=False)
